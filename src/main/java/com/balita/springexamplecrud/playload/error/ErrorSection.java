@@ -20,9 +20,4 @@ public class ErrorSection {
         this.request = request;
         this.errors = listErrors;
     }
-
-    public ErrorSection(List<String> errors, Object request) {
-        this.request = request;
-        this.errors = errors;
-    }
 }

@@ -39,7 +39,7 @@ public class PersonService {
 
     }
 
-    public Person findPersonById(Integer personId) {
+    public Person findPersonById(Long personId) {
         return personRepository.findById(personId).orElse(null);
     }
 

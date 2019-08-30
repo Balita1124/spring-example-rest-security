@@ -11,14 +11,13 @@ import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @EqualsAndHashCode(callSuper = true)
-@Entity
-@Table(name = "PERSONS")
+@Entity(name = "PERSONS")
 @Data
 public class Person extends DateAudit{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private Long id;
 
     private String firstname;
 

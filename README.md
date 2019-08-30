@@ -1,307 +1,166 @@
-## Installation
+## Dependances
 
-* `$ git clone https://github.com/Balita1124/spring-example-restfull-api.git`
-* `$ cd spring-example-restfull-api`
-* `$ mvn install`
-* `$ mvn spring-boot:run`   _(ou utiliser l'IDE)_
+* Suite de  https://github.com/Balita1124/spring-example-restfull-api.git
 
 ## Architecture
-#### _I. Base_
+#### _I. Configuration_
 
-**1. Aller a https://start.spring.io/**
+1. Ajouter les dependances
 
-**2. Creer un projet avec les dependences suivantes:**
+```xml
+<!--Spring security starter-->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
 
- * Spring web Starter
- * Mysql Driver
- * Spring Data Jpa
- * Spring Boot DevTools
- * Lombok
-  
- **3. Ajouter l'entity DateAudit**
- ```java
-@MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
-@JsonIgnoreProperties(
-        value = {"createdAt", "updatedAt"},
-        allowGetters = true
-)
-public abstract class DateAudit implements Serializable {
+<!--Jwt-->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt</artifactId>
+    <version>${jjwt.version}</version>
+</dependency>
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false , columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Instant updatedAt;
-}
+<!--Spring Mail -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+    <version>${spring.boot.version}</version>
+</dependency>
 ```
- 
- **4. Ajouter le config pour CORS et l'audit pour le JPA**
- * CORS
- ```java
-@Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
-    public final long MAX_AGE_SECS = 3600;
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("*")
-                .allowedMethods("HEAD", "OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE")
-                .maxAge(MAX_AGE_SECS);
-    }
-}
-```
- * Audit JPA
- 
- ```java
-@Configuration
-@EnableJpaAuditing
-public class AuditingConfig {
-}
-```
- **5. Creer les errors Custom**
- * Field Error personnalisé
- 
- ```java
-@Data
-public class CustomFieldError {
-    private String fieldname;
-    private String errorMessage;
+2. Ajouter la classe User
 
-    public CustomFieldError(String fieldname, String errorMessage) {
-        this.fieldname = fieldname;
-        this.errorMessage = errorMessage;
-    }
-}
-```
- * Section erreur dans la reponse
- 
- ```java
-@Data
-public class ErrorSection {
-    Object request;
-    List<?> errors;
-
-    public ErrorSection(Object request, List<ObjectError> errors) {
-        List<CustomFieldError> listErrors = new ArrayList<>();
-        if (errors != null)
-            errors.forEach(objectError -> listErrors.add(new CustomFieldError(((FieldError) objectError).getField(), objectError.getDefaultMessage())));
-        this.request = request;
-        this.errors = listErrors;
-    }
-
-    public ErrorSection(List<String> errors, Object request) {
-        this.request = request;
-        this.errors = errors;
-    }
-}
-```
- **6. Creer les models**
- 
- * Enitity Person
- 
- ```java
-@EqualsAndHashCode(callSuper = true)
-@Entity
-@Table(name = "PERSONS")
-@Data
-public class Person extends DateAudit{
+```java
+@Entity(name = "USER")
+public class User extends DateAudit {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    @Column(name = "USER_ID")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
+    @SequenceGenerator(name = "user_seq", allocationSize = 1)
+    private Long id;
 
-    private String firstname;
+    @NaturalId
+    @Column(name = "EMAIL", unique = true)
+    @NotBlank(message = "User email cannot be null")
+    private String email;
 
-    @NotBlank
-    private String lastname;
+    @Column(name = "USERNAME", unique = true)
+    @NullOrNotBlank(message = "Username can not be blank")
+    private String username;
 
-    @JsonFormat(pattern = "dd-MM-yyyy")
-    @NotNull
-    private Date birth;
+    @Column(name = "PASSWORD")
+    @NotNull(message = "Password cannot be null")
+    private String password;
 
-    public Person() {
+    @Column(name = "FIRST_NAME")
+    @NullOrNotBlank(message = "First name can not be blank")
+    private String firstName;
+
+    @Column(name = "LAST_NAME")
+    @NullOrNotBlank(message = "Last name can not be blank")
+    private String lastName;
+
+    @Column(name = "IS_ACTIVE", nullable = false)
+    private Boolean active;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "USER_AUTHORITY", joinColumns = {
+            @JoinColumn(name = "USER_ID", referencedColumnName = "USER_ID")}, inverseJoinColumns = {
+            @JoinColumn(name = "ROLE_ID", referencedColumnName = "ROLE_ID")})
+    private Set<Role> roles = new HashSet<>();
     }
-
-    public Person(String firstname, String lastname, Date birth) {
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.birth = birth;
-    }
-}
-```
- **7. Creer les repository**
- 
- ```java
-
-@Repository
-public interface PersonRepository extends CrudRepository<Person, Integer> {
-}
-
-
-```
- 
- **8. Creer les services**
- 
- ```java
-@Service
-public class PersonService {
-
-    private PersonRepository personRepository;
-
-    @Autowired
-    public PersonService(PersonRepository personRepository) {
-        this.personRepository = personRepository;
-    }
-
-    public List<Person> getAll() {
-        List<Person> personList = new ArrayList<>();
-        personRepository.findAll().forEach(personList::add);
-        return personList;
-    }
-
-    public Person create(PersonRequest personRequest) {
-        Person person = new Person(personRequest.getFirstname(), personRequest.getLastname(), personRequest.getBirth());
-        return personRepository.save(person);
-
-    }
-
-    public Person update(Person currentPerson, PersonRequest personRequest) {
-        currentPerson.setFirstname(personRequest.getFirstname());
-        currentPerson.setLastname(personRequest.getLastname());
-        currentPerson.setBirth(personRequest.getBirth());
-        return personRepository.save(currentPerson);
-
-    }
-
-    public Person findPersonById(Integer personId) {
-        return personRepository.findById(personId).orElse(null);
-    }
-
-    public void delete(Person person) {
-        personRepository.delete(person);
-    }
-}
-```
- 
- **9. Creer les playload**
- 
- * ApiResponse
- ```java
-@Data
-public class ApiResponse {
-    private Boolean success;
-    private HttpStatus status;
-    private String message;
-    private Object data;
-
-    public ApiResponse(Boolean success, HttpStatus status, String message, Object data) {
-        this.success = success;
-        this.status = status;
-        this.message = message;
-        this.data = data;
-    }
-}
-```
- * PersonRequest
- 
- ```java
-
-@Data
-public class PersonRequest {
-
-    private String firstname;
-
-    @NotBlank(message = "Last name can't blank")
-    private String lastname;
-
-    @JsonFormat(pattern="dd-MM-yyyy")
-    @NotNull(message = "Date of birth")
-    private Date birth;
-}
-```
- **10. Creer les controllers**
-
-#### _II. Swagger_
-
-Swagger est une APi permettant de documenter un Rest Api
-
-**1.  Ajouter la dependance maven**
-
-```xml
-<dependency>
-    <groupId>io.springfox</groupId>
-    <artifactId>springfox-swagger2</artifactId>
-    <version>2.9.2</version>
-</dependency>
 ```
 
-
-
-**2.  Integrer Swagger dans le Project**
+3. Ajouter classe Role
 
 ```java
-@Configuration
-@EnableSwagger2
-public class SwaggerConfig {                                    
-    @Bean
-    public Docket api() { 
-        return new Docket(DocumentationType.SWAGGER_2)  
-          .select()                                  
-          .apis(RequestHandlerSelectors.any())              
-          .paths(PathSelectors.any())                          
-          .build();                                           
+@Entity(name = "ROLE")
+public class Role {
+
+    @Id
+    @Column(name = "ROLE_ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "ROLE_NAME")
+    @Enumerated(EnumType.STRING)
+    @NaturalId
+    private RoleName role;
+
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Set<User> userList = new HashSet<>();
+
+    public Role(RoleName role) {
+        this.role = role;
+    }
+
+    public Role() {
+
+    }
+
+    public boolean isAdminRole() {
+        return null != this && this.role.equals(RoleName.ROLE_ADMIN);
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public RoleName getRole() {
+        return role;
+    }
+
+    public void setRole(RoleName role) {
+        this.role = role;
+    }
+
+    public Set<User> getUserList() {
+        return userList;
+    }
+
+    public void setUserList(Set<User> userList) {
+        this.userList = userList;
     }
 }
 ```
 
-Il faut visiter http://localhost:8080/v2/api-docs pour verifier si ca marche.
-
-#### _III. Swagger_
-
-Une interface utilisateur qui permet d'interagir avec swagger
-
-**1.  Ajouter la dependence**
-
-```xml
-<dependency>
-    <groupId>io.springfox</groupId>
-    <artifactId>springfox-swagger-ui</artifactId>
-    <version>2.9.2</version>
-</dependency>
-```
-
-IL faut visiter http://localhost:8080/swagger-ui.html pour voir si ca marche
-
-**2. Filtrer l'api à exposer**
+4. Ajouter l'enum RoleName
 
 ```java
+public enum RoleName {
 
-@Bean
-public Docket api() {                
-    return new Docket(DocumentationType.SWAGGER_2)          
-      .select()                                       
-      .apis(RequestHandlerSelectors.basePackage("com.balita.springexamplecrud.controller"))
-      .paths(PathSelectors.ant("/persons/*"))                     
-      .build();
-}
+    /**
+     * Role admin authority role.
+     */
+    ROLE_ADMIN,
 
-```
-
-**3. Api Info**
-
-```java
-private ApiInfo apiInfo() {
-    return new ApiInfo(
-      "My REST API", 
-      "Some custom description of API.", 
-      "API TOS", 
-      "Terms of service", 
-      new Contact("John Doe", "www.example.com", "myeaddress@company.com"), 
-      "License of API", "API license URL", Collections.emptyList());
+    /**
+     * Role user authority role.
+     */
+    ROLE_USER
 }
 ```
 
+5. Creation Repository
+
+* RoleRepository
+* UserRepository
+* RefreshTokenRepository
+
+6. Creation de service
+
+* CustomUserDetailsService
+
+7. Creation des fichiers de configuration
+
+* JwtTokenProvider
+* JwtAuthenticationFilter
+* WebSecurityConfig
+*CustomUserDetails

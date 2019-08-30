@@ -14,7 +14,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/")
+@RequestMapping("/api")
 public class PersonController {
 
     private PersonService personService;
@@ -24,7 +24,7 @@ public class PersonController {
         this.personService = personService;
     }
 
-    @GetMapping(value = "persons", name = "Find All person")
+    @GetMapping(value = "/persons", name = "Find All person")
     public ApiResponse getAllPersons() {
         List<Person> personList = personService.getAll();
         return new ApiResponse(
@@ -35,7 +35,7 @@ public class PersonController {
         );
     }
 
-    @PostMapping(value = "persons", name = "Create person")
+    @PostMapping(value = "/persons", name = "Create person")
     public ApiResponse createPerson(@RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             ErrorSection es = new ErrorSection(personRequest, bindingResult.getAllErrors());
@@ -55,8 +55,8 @@ public class PersonController {
         );
     }
 
-    @PutMapping(value = "persons/{personId}", name = "Update person")
-    public ApiResponse updatePerson(@PathVariable(value = "personId") Integer personId, @RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
+    @PutMapping(value = "/persons/{personId}", name = "Update person")
+    public ApiResponse updatePerson(@PathVariable(value = "personId") Long personId, @RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
 
         Person currentPerson = personService.findPersonById(personId);
         if (currentPerson == null) {
@@ -85,8 +85,8 @@ public class PersonController {
         );
     }
 
-    @DeleteMapping(value = "persons/{personId}", name = "Delete person")
-    public ApiResponse deletePerson(@PathVariable(value = "personId") Integer personId) {
+    @DeleteMapping(value = "/persons/{personId}", name = "Delete person")
+    public ApiResponse deletePerson(@PathVariable(value = "personId") Long personId) {
         Person currentPerson = personService.findPersonById(personId);
         if (currentPerson == null) {
             return new ApiResponse(
