@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.time.Instant;
 
 @Entity(name = "REFRESH_TOKEN")
-public class RefreshToken  extends DateAudit{
+public class RefreshToken extends DateAudit {
 
     @Id
     @Column(name = "TOKEN_ID")
@@ -18,6 +18,10 @@ public class RefreshToken  extends DateAudit{
     @NaturalId(mutable = true)
     private String token;
 
+    @OneToOne(optional = false, cascade = CascadeType.ALL)
+    @JoinColumn(name = "USER_DEVICE_ID", unique = true)
+    private UserDevice userDevice;
+
     @Column(name = "REFRESH_COUNT")
     private Long refreshCount;
 
@@ -27,14 +31,55 @@ public class RefreshToken  extends DateAudit{
     public RefreshToken() {
     }
 
-    public RefreshToken(Long id, String token, Long refreshCount, Instant expiryDate) {
+    public RefreshToken(Long id, String token, UserDevice userDevice, Long refreshCount, Instant expiryDate) {
         this.id = id;
         this.token = token;
+        this.userDevice = userDevice;
         this.refreshCount = refreshCount;
         this.expiryDate = expiryDate;
     }
 
     public void incrementRefreshCount() {
         refreshCount = refreshCount + 1;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public UserDevice getUserDevice() {
+        return userDevice;
+    }
+
+    public void setUserDevice(UserDevice userDevice) {
+        this.userDevice = userDevice;
+    }
+
+    public Instant getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(Instant expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    public Long getRefreshCount() {
+        return refreshCount;
+    }
+
+    public void setRefreshCount(Long refreshCount) {
+        this.refreshCount = refreshCount;
     }
 }

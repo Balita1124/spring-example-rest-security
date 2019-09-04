@@ -2,10 +2,12 @@ package com.balita.springexamplecrud.controller;
 
 
 import com.balita.springexamplecrud.model.CustomUserDetails;
+import com.balita.springexamplecrud.model.RefreshToken;
 import com.balita.springexamplecrud.model.User;
 import com.balita.springexamplecrud.playload.ApiResponse;
 import com.balita.springexamplecrud.playload.auth.LoginRequest;
 import com.balita.springexamplecrud.playload.auth.RegistrationRequest;
+import com.balita.springexamplecrud.playload.auth.TokenResponse;
 import com.balita.springexamplecrud.playload.error.ErrorSection;
 import com.balita.springexamplecrud.security.JwtTokenProvider;
 import com.balita.springexamplecrud.service.AuthService;
@@ -60,8 +62,9 @@ public class AuthController {
                 user
         );
     }
+
     @PostMapping("/login")
-    public ApiResponse authenticateUser(@Valid @RequestBody LoginRequest loginRequest, BindingResult bindingResult){
+    public ApiResponse authenticateUser(@Valid @RequestBody LoginRequest loginRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             ErrorSection es = new ErrorSection(loginRequest, bindingResult.getAllErrors());
             return new ApiResponse(
@@ -75,7 +78,7 @@ public class AuthController {
 
         Authentication authentication = authService.authenticateUser(loginRequest);
         System.out.println(authentication.toString());
-        if(!authentication.isAuthenticated()){
+        if (!authentication.isAuthenticated()) {
             ErrorSection es = new ErrorSection(loginRequest, bindingResult.getAllErrors());
             return new ApiResponse(
                     false,
@@ -87,6 +90,17 @@ public class AuthController {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         logger.info("Logged in User returned [API]: " + customUserDetails.getUsername());
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        RefreshTo
+
+        RefreshToken refreshTokenObject = authService.createAndPersistRefreshTokenForDevice(authentication, loginRequest);
+        String refreshToken = refreshTokenObject.getToken();
+        String jwtToken = authService.generateToken(customUserDetails);
+        TokenResponse tokenResponse = new TokenResponse(customUserDetails.getUsername(), jwtToken, refreshToken, jwtTokenProvider.getExpiryDuration());
+        return new ApiResponse(
+                true,
+                HttpStatus.OK,
+                "User Logged",
+                tokenResponse
+
+        );
     }
 }
