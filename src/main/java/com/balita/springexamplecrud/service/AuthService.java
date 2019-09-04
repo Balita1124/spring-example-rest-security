@@ -1,11 +1,15 @@
 package com.balita.springexamplecrud.service;
 
+import com.balita.springexamplecrud.model.RefreshToken;
 import com.balita.springexamplecrud.model.User;
+import com.balita.springexamplecrud.playload.auth.LoginRequest;
 import com.balita.springexamplecrud.playload.auth.RegistrationRequest;
 import com.balita.springexamplecrud.security.JwtTokenProvider;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +49,16 @@ public class AuthService {
 
     public Boolean existsByUsername(String username) {
         return userService.existsByUsername(username);
+    }
+
+
+    public Authentication authenticateUser(LoginRequest loginRequest){
+        return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsernameOrEmail(), loginRequest.getPassword()));
+    }
+
+    public RefreshToken createAndPersistRefreshTokenForDevice(Authentication authentication, LoginRequest loginRequest){
+        User currentUser = (User) authentication.getPrincipal();
+
     }
 
 
