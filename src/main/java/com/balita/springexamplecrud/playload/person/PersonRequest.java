@@ -18,4 +18,10 @@ public class PersonRequest {
     @JsonFormat(pattern="dd-MM-yyyy")
     @NotNull(message = "Date of birth")
     private Date birth;
+
+    public PersonRequest(String firstname, @NotBlank(message = "Last name can't blank") String lastname, @NotNull(message = "Date of birth") Date birth) {
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.birth = birth;
+    }
 }

@@ -31,6 +31,11 @@ public class DeviceInfo {
         notificationToken = notificationToken;
     }
 
+    public DeviceInfo(@NotBlank(message = "Device id cannot be blank") String deviceId, @NotNull(message = "Device type cannot be null") DeviceType deviceType) {
+        this.deviceId = deviceId;
+        this.deviceType = deviceType;
+    }
+
     public String getDeviceId() {
         return deviceId;
     }
