@@ -25,6 +25,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         ApiResponse apiResponse = new ApiResponse(true, HttpStatus.FORBIDDEN, "Access Denied", null);
         apiResponse.setMessage("Access Denied");
         httpServletResponse.setHeader("Content-Type", "application/json");
+        httpServletResponse.setStatus(403);
         OutputStream out = httpServletResponse.getOutputStream();
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(out, apiResponse);

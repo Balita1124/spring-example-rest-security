@@ -7,6 +7,7 @@ import com.balita.springexamplecrud.playload.person.PersonRequest;
 import com.balita.springexamplecrud.service.PersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,83 +26,91 @@ public class PersonController {
     }
 
     @GetMapping(value = "/persons", name = "Find All person")
-    public ApiResponse getAllPersons() {
+    public ResponseEntity<ApiResponse> getAllPersons() {
         List<Person> personList = personService.getAll();
-        return new ApiResponse(
+        ApiResponse response = new ApiResponse(
                 true,
                 HttpStatus.OK,
                 "Persons List",
                 personList
         );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 
     @PostMapping(value = "/persons", name = "Create person")
-    public ApiResponse createPerson(@RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
+    public ResponseEntity<ApiResponse> createPerson(@RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             ErrorSection es = new ErrorSection(personRequest, bindingResult.getAllErrors());
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.BAD_REQUEST,
                     "Person not created",
                     es
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
         Person person = personService.create(personRequest);
-        return new ApiResponse(
+        ApiResponse response = new ApiResponse(
                 true,
-                HttpStatus.OK,
+                HttpStatus.CREATED,
                 "Person Created successfully",
                 person
         );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 
     @PutMapping(value = "/persons/{personId}", name = "Update person")
-    public ApiResponse updatePerson(@PathVariable(value = "personId") Long personId, @RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
+    public ResponseEntity<ApiResponse> updatePerson(@PathVariable(value = "personId") Long personId, @RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
 
         Person currentPerson = personService.findPersonById(personId);
         if (currentPerson == null) {
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.NOT_FOUND,
                     "Person with id = " + personId + " not found",
                     new ErrorSection(personRequest, null)
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
         if (bindingResult.hasErrors()) {
             ErrorSection es = new ErrorSection(personRequest, bindingResult.getAllErrors());
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.BAD_REQUEST,
                     "Person not updated",
                     es
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
         Person person = personService.update(currentPerson, personRequest);
-        return new ApiResponse(
+        ApiResponse response = new ApiResponse(
                 true,
-                HttpStatus.OK,
+                HttpStatus.ACCEPTED,
                 "Person Updated successfully",
                 person
         );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 
     @DeleteMapping(value = "/persons/{personId}", name = "Delete person")
-    public ApiResponse deletePerson(@PathVariable(value = "personId") Long personId) {
+    public ResponseEntity<ApiResponse> deletePerson(@PathVariable(value = "personId") Long personId) {
         Person currentPerson = personService.findPersonById(personId);
         if (currentPerson == null) {
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.NOT_FOUND,
                     "Person with id = " + personId + " not found",
                     null
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
         personService.delete(currentPerson);
-        return new ApiResponse(
+        ApiResponse response = new ApiResponse(
                 true,
                 HttpStatus.OK,
                 "Person Deleted successfully",
                 null
         );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 }

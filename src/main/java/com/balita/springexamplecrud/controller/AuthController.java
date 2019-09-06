@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
@@ -43,49 +44,49 @@ public class AuthController {
 
     @PostMapping("/register")
     @ApiOperation(value = "Registers the user and publishes an event to generate the email verification")
-    public ApiResponse registerUser(@Valid @RequestBody RegistrationRequest registrationRequest, BindingResult bindingResult) {
+    public ResponseEntity<ApiResponse> registerUser(@Valid @RequestBody RegistrationRequest registrationRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             ErrorSection es = new ErrorSection(registrationRequest, bindingResult.getAllErrors());
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.BAD_REQUEST,
                     "User not registered",
                     es
-
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
         User user = authService.registerUser(registrationRequest);
-        return new ApiResponse(
+        ApiResponse response = new ApiResponse(
                 true,
-                HttpStatus.OK,
+                HttpStatus.CREATED,
                 "User registered",
                 user
         );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 
     @PostMapping("/login")
-    public ApiResponse authenticateUser(@Valid @RequestBody LoginRequest loginRequest, BindingResult bindingResult) {
+    public ResponseEntity<ApiResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             ErrorSection es = new ErrorSection(loginRequest, bindingResult.getAllErrors());
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.NOT_ACCEPTABLE,
                     "User not logged",
                     es
-
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
 
         Authentication authentication = authService.authenticateUser(loginRequest);
-        System.out.println(authentication.toString());
         if (!authentication.isAuthenticated()) {
-            ErrorSection es = new ErrorSection(loginRequest, bindingResult.getAllErrors());
-            return new ApiResponse(
+            ApiResponse response = new ApiResponse(
                     false,
-                    HttpStatus.OK,
+                    HttpStatus.BAD_REQUEST,
                     "Username or Email and Password is incorrect",
                     null
             );
+            return new ResponseEntity<ApiResponse>(response, response.getStatus());
         }
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         logger.info("Logged in User returned [API]: " + customUserDetails.getUsername());
@@ -95,12 +96,13 @@ public class AuthController {
         String refreshToken = refreshTokenObject.getToken();
         String jwtToken = authService.generateToken(customUserDetails);
         TokenResponse tokenResponse = new TokenResponse(customUserDetails.getUsername(), jwtToken, refreshToken, jwtTokenProvider.getExpiryDuration());
-        return new ApiResponse(
+        ApiResponse response = new ApiResponse(
                 true,
-                HttpStatus.OK,
+                HttpStatus.ACCEPTED,
                 "User Logged",
                 tokenResponse
 
         );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 }

@@ -33,6 +33,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         logger.error("User is unauthorised. Routing from the entry point");
         ApiResponse apiResponse = new ApiResponse(false, HttpStatus.UNAUTHORIZED, "Unauthorised: You are not authorized to access this ressource", null);
         httpServletResponse.setHeader("Content-Type", "application/json");
+        httpServletResponse.setStatus(401);
         OutputStream out = httpServletResponse.getOutputStream();
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(out, apiResponse);
