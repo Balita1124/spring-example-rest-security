@@ -79,6 +79,7 @@ public class AuthController {
         }
 
         Authentication authentication = authService.authenticateUser(loginRequest);
+        logger.info(authentication);
         if (!authentication.isAuthenticated()) {
             ApiResponse response = new ApiResponse(
                     false,

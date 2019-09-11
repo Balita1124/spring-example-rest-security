@@ -24,7 +24,7 @@ public class Person extends DateAudit{
     @NotBlank
     private String lastname;
 
-    @JsonFormat(pattern = "dd-MM-yyyy")
+    @JsonFormat(pattern = "dd.MM.yyyy")
     @NotNull
     private Date birth;
 

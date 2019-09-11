@@ -37,6 +37,26 @@ public class PersonController {
         return new ResponseEntity<ApiResponse>(response, response.getStatus());
     }
 
+    @GetMapping(value = "/persons/{id}", name = "Find a person")
+    public ResponseEntity<ApiResponse> getPerson(@PathVariable("id") Long personId) {
+        Person person = personService.findPersonById(personId);
+        if(person == null){
+            ApiResponse response = new ApiResponse(
+                    false,
+                    HttpStatus.NOT_FOUND,
+                    "Person not found",
+                    null
+            );
+        }
+        ApiResponse response = new ApiResponse(
+                true,
+                HttpStatus.OK,
+                "Person is in database",
+                person
+        );
+        return new ResponseEntity<ApiResponse>(response, response.getStatus());
+    }
+
     @PostMapping(value = "/persons", name = "Create person")
     public ResponseEntity<ApiResponse> createPerson(@RequestBody @Valid PersonRequest personRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -107,7 +127,7 @@ public class PersonController {
         personService.delete(currentPerson);
         ApiResponse response = new ApiResponse(
                 true,
-                HttpStatus.OK,
+                HttpStatus.NO_CONTENT,
                 "Person Deleted successfully",
                 null
         );
